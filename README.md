@@ -10,8 +10,10 @@ files which you can analyze as you wish. Further tutorials will be posted soon.
 
 Open c.php and edit following settings: 
 
+```php
 define('LOG_DIRECTORY', '');
 define('LOG_FILENAME', 'counter.log');
+```
 
 It is recommended to set LOG_DIRECTORY to some path which is not 
 accessible from the web.

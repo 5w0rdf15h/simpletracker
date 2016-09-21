@@ -174,13 +174,13 @@ function getOrSetUuid() {
 }
 $request_ts = time();
 $ip_address = $_SERVER['REMOTE_ADDR'];
-$page_title = isset($_REQUEST['pt']) ? $_REQUEST['pt'] : '';
+$page_title = isset($_REQUEST['pt']) ? standart_filter($_REQUEST['pt']) : '';
 $requested_url = isset($_REQUEST['u']) ? standart_filter($_REQUEST['u']) : '';
 $request_type = isset($_REQUEST['rt']) ? 'click' : 'hit';
 $user_agent = standart_filter($_SERVER['HTTP_USER_AGENT']);
 $referer = isset($_REQUEST['r']) ? standart_filter($_REQUEST['r']) : '';
-$click_destination = isset($_REQUEST['cd']) ? $_REQUEST['cd'] : '';
-$uuid = getOrSetUuid();
+$click_destination = isset($_REQUEST['cd']) ? standart_filter($_REQUEST['cd']) : '';
+$uuid = standart_filter(getOrSetUuid());
 $variable_1 = isset($_REQUEST['v_1']) ? standart_filter($_REQUEST['v_1']) : '';
 $variable_2 = isset($_REQUEST['v_2']) ? standart_filter($_REQUEST['v_2']) : '';
 $variable_3 = isset($_REQUEST['v_3']) ? standart_filter($_REQUEST['v_3']) : '';

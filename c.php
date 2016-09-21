@@ -1,6 +1,7 @@
 <?php
 
 error_reporting(0);
+ini_set('display_errors', 0);
 date_default_timezone_set('UTC');
 
 # Change this setting to point somewhere outside from web accessible path.
@@ -8,7 +9,8 @@ define('LOG_DIRECTORY', '');
 define('LOG_FILENAME', 'counter.log');
 
 function standart_filter($string) {
-    $string = str_replace("\t", ' ', str_replace("\n", ' ', str_replace("\r\n", ' ', $string)));
+    $string = str_replace('"', "'", str_replace("\t", ' ',
+                str_replace("\n", ' ', str_replace("\r\n", ' ', $string))));
     return $string;
 }
 
@@ -172,19 +174,27 @@ function getOrSetUuid() {
 }
 $request_ts = time();
 $ip_address = $_SERVER['REMOTE_ADDR'];
-$page_title = isset($_REQUEST['pt']) ? $_REQUEST['pt'] : '-';
-$requested_url = isset($_REQUEST['u']) ? standart_filter($_REQUEST['u']) : '-';
+$page_title = isset($_REQUEST['pt']) ? $_REQUEST['pt'] : '';
+$requested_url = isset($_REQUEST['u']) ? standart_filter($_REQUEST['u']) : '';
 $request_type = isset($_REQUEST['rt']) ? 'click' : 'hit';
 $user_agent = standart_filter($_SERVER['HTTP_USER_AGENT']);
-$referer = isset($_REQUEST['r']) ? standart_filter($_REQUEST['r']) : '-';
-$click_destination = isset($_REQUEST['cd']) ? $_REQUEST['cd'] : '-';
+$referer = isset($_REQUEST['r']) ? standart_filter($_REQUEST['r']) : '';
+$click_destination = isset($_REQUEST['cd']) ? $_REQUEST['cd'] : '';
 $uuid = getOrSetUuid();
+$variable_1 = isset($_REQUEST['v_1']) ? standart_filter($_REQUEST['v_1']) : '';
+$variable_2 = isset($_REQUEST['v_2']) ? standart_filter($_REQUEST['v_2']) : '';
+$variable_3 = isset($_REQUEST['v_3']) ? standart_filter($_REQUEST['v_3']) : '';
+$variable_4 = isset($_REQUEST['v_4']) ? standart_filter($_REQUEST['v_4']) : '';
+$variable_5 = isset($_REQUEST['v_5']) ? standart_filter($_REQUEST['v_5']) : '';
 
 $file_path = join(DIRECTORY_SEPARATOR, array(LOG_DIRECTORY, LOG_FILENAME));
 if (!is_writable($file_path)) {
     die();
 }
 $fh = fopen($file_path, 'a');
-$log_string = "{$request_ts}\t{$ip_address}\t{$uuid}\t{$request_type}\t{$requested_url}\t{$page_title}\t{$user_agent}\t{$referer}\t{$click_destination}\n";
+$log_string = "{$request_ts} {$ip_address} \"{$uuid}\" {$request_type} "
+. "\"{$requested_url}\" \"{$page_title}\" \"{$user_agent}\" \"{$referer}\" "
+. "\"{$click_destination}\" \"{$variable_1}\" \"{$variable_2}\" "
+. " \"{$variable_3}\" \"{$variable_4}\" \"{$variable_5}\"\n";
 fwrite($fh, $log_string);
 fclose($fh);

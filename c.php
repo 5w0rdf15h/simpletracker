@@ -7,6 +7,7 @@ date_default_timezone_set('UTC');
 # Change this setting to point somewhere outside from web accessible path.
 define('LOG_DIRECTORY', '');
 define('LOG_FILENAME', 'counter.log');
+define('COOKIE_LIFETIME', 315569260);
 
 function standart_filter($string) {
     $string = str_replace('"', "'", str_replace("\t", ' ',
@@ -168,33 +169,89 @@ function getOrSetUuid() {
     $uuid = isset($_COOKIE['uuid']) ? $_COOKIE['uuid'] : null;
     if (is_null($uuid)) {
         $uuid = randomUuid();
-        setcookie('uuid', $uuid, time() + 315569260);
+        setcookie('uuid', $uuid, time() + COOKIE_LIFETIME);
     }
     return $uuid;
 }
 $request_ts = time();
 $ip_address = $_SERVER['REMOTE_ADDR'];
-$page_title = isset($_REQUEST['pt']) ? standart_filter($_REQUEST['pt']) : '';
+$proxy_ip = isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? $_SERVER['HTTP_X_FORWARDED_FOR'] : '';
+$page_title = isset($_REQUEST['pt']) ? standart_filter(rawurldecode($_REQUEST['pt'])) : '';
 $requested_url = isset($_REQUEST['u']) ? standart_filter($_REQUEST['u']) : '';
-$request_type = isset($_REQUEST['rt']) ? 'click' : 'hit';
+$available_request_types = array('hit', 'click', 'conversion', 'ecommerce');
+$default_request_type = 'hit';
+$request_type = isset($_REQUEST['rt']) ? $_REQUEST['rt'] : $default_request_type;
+if (!in_array($request_type, $available_request_types)) {
+    $request_type = $default_request_type;
+}
 $user_agent = standart_filter($_SERVER['HTTP_USER_AGENT']);
 $referer = isset($_REQUEST['r']) ? standart_filter($_REQUEST['r']) : '';
 $click_destination = isset($_REQUEST['cd']) ? standart_filter($_REQUEST['cd']) : '';
 $uuid = standart_filter(getOrSetUuid());
-$variable_1 = isset($_REQUEST['v_1']) ? standart_filter($_REQUEST['v_1']) : '';
-$variable_2 = isset($_REQUEST['v_2']) ? standart_filter($_REQUEST['v_2']) : '';
-$variable_3 = isset($_REQUEST['v_3']) ? standart_filter($_REQUEST['v_3']) : '';
-$variable_4 = isset($_REQUEST['v_4']) ? standart_filter($_REQUEST['v_4']) : '';
-$variable_5 = isset($_REQUEST['v_5']) ? standart_filter($_REQUEST['v_5']) : '';
+$vars = array('v_1', 'v_2', 'v_3', 'v_4', 'v_5', 'subid_1', 'subid_2', 'subid_3');
+$vars_data = array();
+foreach ($vars as $var) {
+    if (isset($_REQUEST[$var])) {
+        $vars_data[$var] = standart_filter($_REQUEST[$var]);
+    }
+}
 
 $file_path = join(DIRECTORY_SEPARATOR, array(LOG_DIRECTORY, LOG_FILENAME));
 if (!is_writable($file_path)) {
     die();
 }
+$log_data = array('requested_url' => $requested_url);
 $fh = fopen($file_path, 'a');
-$log_string = "{$request_ts} {$ip_address} \"{$uuid}\" {$request_type} "
-. "\"{$requested_url}\" \"{$page_title}\" \"{$user_agent}\" \"{$referer}\" "
-. "\"{$click_destination}\" \"{$variable_1}\" \"{$variable_2}\" "
-. " \"{$variable_3}\" \"{$variable_4}\" \"{$variable_5}\"\n";
+$log_string = "{$request_ts} {$ip_address} \"{$uuid}\" \"{$user_agent}\" "
+. "{$request_type} \"{$requested_url}\" \"{$referer}\" ";
+
+if (!in_array('json', get_loaded_extensions())) {
+    $log_string .= 'ERROR: json extension is not enabled in PHP.';
+    fwrite($fh, $log_string);
+    fclose($fh);
+    die();
+}
+
+if ($request_type == 'hit') {
+    $r = array(
+        'page_title' => $page_title,
+    );
+    if ($proxy_ip) {
+        $r['proxy_ip'] = $proxy_ip;
+    }
+    $request_data = array_merge($r, $vars_data);
+} elseif ($request_type == 'click') {
+    $r = array(
+        'page_title' => $page_title,
+        'click_destination' => $click_destination
+    );
+    if ($proxy_ip) {
+        $r['proxy_ip'] = $proxy_ip;
+    }
+    $request_data = array_merge($r, $vars_data);
+} elseif ($request_type == 'conversion') {
+    $r = array();
+    $request_data = array_merge($r, $vars_data);
+} elseif ($request_type == 'ecommerce') {
+    $r = array();
+    $request_data = array();
+}
+$parsed_url = parse_url($requested_url, PHP_URL_QUERY);
+$available_get_vars = array('utm_source', 'utm_medium', 'utm_campaign',
+    'utm_term', 'utm_content'
+);
+$get_params = array();
+if ($parsed_url) {
+    parse_str($parsed_url, $url_vars);
+    foreach ($url_vars as $k => $v) {
+        if (in_array($k, $available_get_vars)) {
+            $get_params[$k] = $v;
+        }
+    }
+}
+if (count($get_params)) {
+    $request_data = array_merge($request_data, $get_params);
+}
+$log_string .= json_encode($request_data) . "\n";
 fwrite($fh, $log_string);
 fclose($fh);

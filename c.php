@@ -173,11 +173,21 @@ function getOrSetUuid() {
     }
     return $uuid;
 }
+function getDomainFromUrl($url) {
+    $parsed_url = parse_url($url, PHP_URL_HOST);
+    if (!$parsed_url) {
+        return '';
+    }
+    return $parsed_url;
+}
 $request_ts = time();
 $ip_address = $_SERVER['REMOTE_ADDR'];
 $proxy_ip = isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? $_SERVER['HTTP_X_FORWARDED_FOR'] : '';
 $page_title = isset($_REQUEST['pt']) ? standart_filter(rawurldecode($_REQUEST['pt'])) : '';
 $requested_url = isset($_REQUEST['u']) ? standart_filter($_REQUEST['u']) : '';
+$requested_url_domain = getDomainFromUrl($requested_url);
+$click_url = isset($_REQUEST['cu']) ? standart_filter($_REQUEST['cu']) : '';
+$click_url_domain = getDomainFromUrl($click_url);
 $available_request_types = array('hit', 'click', 'conversion', 'ecommerce');
 $default_request_type = 'hit';
 $request_type = isset($_REQUEST['rt']) ? $_REQUEST['rt'] : $default_request_type;
@@ -186,7 +196,7 @@ if (!in_array($request_type, $available_request_types)) {
 }
 $user_agent = standart_filter($_SERVER['HTTP_USER_AGENT']);
 $referer = isset($_REQUEST['r']) ? standart_filter($_REQUEST['r']) : '';
-$click_destination = isset($_REQUEST['cd']) ? standart_filter($_REQUEST['cd']) : '';
+$referer_domain = getDomainFromUrl($referer);
 $uuid = standart_filter(getOrSetUuid());
 $vars = array('v_1', 'v_2', 'v_3', 'v_4', 'v_5', 'subid_1', 'subid_2', 'subid_3');
 $vars_data = array();
@@ -203,7 +213,9 @@ if (!is_writable($file_path)) {
 $log_data = array('requested_url' => $requested_url);
 $fh = fopen($file_path, 'a');
 $log_string = "{$request_ts} {$ip_address} \"{$uuid}\" \"{$user_agent}\" "
-. "{$request_type} \"{$requested_url}\" \"{$referer}\" ";
+. "{$request_type} \"{$requested_url}\" \"{$requested_url_domain}\" "
+. "\"{$referer}\" \"{$referer_domain}\" \"{$click_url}\" "
+. "\"{$click_url_domain}\" ";
 
 if (!in_array('json', get_loaded_extensions())) {
     $log_string .= 'ERROR: json extension is not enabled in PHP.';

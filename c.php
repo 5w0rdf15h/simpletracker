@@ -8,6 +8,7 @@ date_default_timezone_set('UTC');
 define('LOG_DIRECTORY', '');
 define('LOG_FILENAME', 'counter.log');
 define('COOKIE_LIFETIME', 315569260);
+define('COOKIE_DOMAIN', '');
 
 function standart_filter($string) {
     $string = str_replace('"', "'", str_replace("\t", ' ',
@@ -169,7 +170,11 @@ function getOrSetUuid() {
     $uuid = isset($_COOKIE['uuid']) ? $_COOKIE['uuid'] : null;
     if (is_null($uuid)) {
         $uuid = randomUuid();
-        setcookie('uuid', $uuid, time() + COOKIE_LIFETIME);
+        if (!COOKIE_DOMAIN) {
+            setcookie('uuid', $uuid, time() + COOKIE_LIFETIME);
+        } else {
+            setcookie('uuid', $uuid, time() + COOKIE_LIFETIME, '/', COOKIE_DOMAIN);
+        }
     }
     return $uuid;
 }

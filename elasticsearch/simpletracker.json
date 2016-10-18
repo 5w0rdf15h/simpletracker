@@ -1,0 +1,39 @@
+{"template" : "simpletracker", 
+    "settings" : { "index.refresh_interval" : "5s" }, 
+    "mappings" : { 
+        "_default_" : { 
+            "_all" : { "enabled" : false }, 
+            "dynamic_templates" : [{ 
+              "message_field" : { 
+                "match" : "message", 
+                "match_mapping_type" : "string", 
+                "mapping" : { "type" : "string", "index" : "not_analyzed" } 
+              } 
+            }, { 
+              "string_fields" : { 
+                "match" : "*", 
+                "match_mapping_type" : "string", 
+                "mapping" : { "type" : "string", "index" : "not_analyzed" } 
+              } 
+            }], 
+            "properties" : { 
+                "@timestamp" : { "type" : "date", "format" : "dateOptionalTime" }, 
+                "@version" : { "type" : "integer", "index" : "not_analyzed" }, 
+                "ip_address" : { "type" : "ip", "norms" : { "enabled" : false } }, 
+                "uuid" : { "type" : "string", "index" : "not_analyzed" },
+                "user_agent" : { "type" : "string", "index" : "not_analyzed" }, 
+                "request_type" : { "type" : "string", "index" : "not_analyzed" }, 
+                "requested_domain" : { "type" : "string", "index" : "not_analyzed" }, 
+                "referred_domain" : { "type" : "string", "index" : "not_analyzed" }, 
+                "referrer" : { "type" : "string", "index" : "not_analyzed" }, 
+                "requested_url" : { "type" : "string", "index" : "not_analyzed" }, 
+                "geoip" : { "type" : "object", "dynamic" : true, "properties" : { "location" : { "type" : "geo_point" } } }, 
+                "geoip_city" : {"type": "object", "dynamic" : true},
+                "geoip_asnum" : {"type": "object", "dynamic" : true},
+                "geoip_isp" : {"type": "object", "dynamic" : true},
+                "json_data": {"type" : "object", "dynamic": true},
+                "user_agent_detailed": {"type": "object", "dynamic": true}
+            } 
+        } 
+    } 
+}
